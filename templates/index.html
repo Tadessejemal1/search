@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Search Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Company Search Tool</h1>
+        <form id="searchForm">
+            <input type="text" id="query" placeholder="Enter search query">
+            <button type="submit">Search</button>
+        </form>
+
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Additional Phones</th>
+                    <th>Address</th>
+                    <th>Address Nominative</th>
+                    <th>Apartment</th>
+                    <th>Branch Title</th>
+                    <th>Card Logo URL</th>
+                    <th>Cluster Key</th>
+                    <th>Company Type</th>
+                    <th>Country</th>
+                    <th>DOB</th>
+                    <th>Email</th>
+                    <th>Fax</th>
+                    <th>First Name</th>
+                    <th>Floor</th>
+                    <th>Geo Coordinates</th>
+                    <th>House Number</th>
+                    <th>Indexed At</th>
+                    <th>Is Open</th>
+                    <th>Last Name</th>
+                    <th>Municipality</th>
+                    <th>Phone</th>
+                    <th>Postal Code</th>
+                    <th>Postal Station</th>
+                    <th>Slogan</th>
+                    <th>Street</th>
+                    <th>URL</th>
+                    <th>VAT Number</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button id="exportBtn" style="display:none;">Export to CSV</button>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('query').value;
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `query=${query}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.querySelector('#resultsTable tbody');
+                tbody.innerHTML = ''; 
+                data.forEach(business => {
+                    const row = document.createElement('tr');
+
+                    const additionalPhones = business.additional_phones.length ? business.additional_phones.map(phone => phone.pretty).join(", ") : 'N/A';
+
+                    row.innerHTML = `
+                        <td>${business.name || 'N/A'}</td>
+                        <td>${additionalPhones}</td>
+                        <td>${business.address || 'N/A'}</td>
+                        <td>${business.address_nominative || 'N/A'}</td>
+                        <td>${business.apartment || 'N/A'}</td>
+                        <td>${business.branch_title?.is?.singular || 'N/A'}</td>
+                        <td>${business.card_logo_url || 'N/A'}</td>
+                        <td>${business.cluster_key || 'N/A'}</td>
+                        <td>${business.company_type || 'N/A'}</td>
+                        <td>${business.country || 'N/A'}</td>
+                        <td>${business.dob || 'N/A'}</td>
+                        <td>${business.email || 'N/A'}</td>
+                        <td>${business.fax || 'N/A'}</td>
+                        <td>${business.first_name || 'N/A'}</td>
+                        <td>${business.floor || 'N/A'}</td>
+                        <td>${business.geo?.coordinates || 'N/A'}</td>
+                        <td>${business.house_number || 'N/A'}</td>
+                        <td>${business.indexed_at || 'N/A'}</td>
+                        <td>${business.is_open || 'N/A'}</td>
+                        <td>${business.last_name || 'N/A'}</td>
+                        <td>${business.municipality || 'N/A'}</td>
+                        <td>${business.phone?.pretty || 'N/A'}</td>
+                        <td>${business.postal_code || 'N/A'}</td>
+                        <td>${business.postal_station || 'N/A'}</td>
+                        <td>${business.slogan || 'N/A'}</td>
+                        <td>${business.street || 'N/A'}</td>
+                        <td>${business.url || 'N/A'}</td>
+                        <td>${business.vat_number || 'N/A'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                if (data.length > 0) {
+                    document.getElementById('exportBtn').style.display = 'block';
+                } else {
+                    document.getElementById('exportBtn').style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            fetch('/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ results: Array.from(document.querySelectorAll('#resultsTable tbody tr')).map(row => {
+                    return {
+                        name: row.cells[0].innerText,
+                        additional_phones: row.cells[1].innerText,
+                        address: row.cells[2].innerText,
+                        address_nominative: row.cells[3].innerText,
+                        apartment: row.cells[4].innerText,
+                        branch_title: row.cells[5].innerText,
+                        card_logo_url: row.cells[6].innerText,
+                        cluster_key: row.cells[7].innerText,
+                        company_type: row.cells[8].innerText,
+                        country: row.cells[9].innerText,
+                        dob: row.cells[10].innerText,
+                        email: row.cells[11].innerText,
+                        fax: row.cells[12].innerText,
+                        first_name: row.cells[13].innerText,
+                        floor: row.cells[14].innerText,
+                        geo_coordinates: row.cells[15].innerText,
+                        house_number: row.cells[16].innerText,
+                        indexed_at: row.cells[17].innerText,
+                        is_open: row.cells[18].innerText,
+                        last_name: row.cells[19].innerText,
+                        municipality: row.cells[21].innerText,
+                        phone: row.cells[22].innerText,
+                        postal_code: row.cells[23].innerText,
+                        postal_station: row.cells[24].innerText,
+                        slogan: row.cells[25].innerText,
+                        street: row.cells[26].innerText,
+                        url: row.cells[27].innerText,
+                        vat_number: row.cells[28].innerText
+                    };
+                }) })
+            })
+            .then(response => response.text())
+            .then(data => {
+                const blob = new Blob([data], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'results.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        });
+    </script>
+</body>
+</html>

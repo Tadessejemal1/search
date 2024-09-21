@@ -4,6 +4,7 @@ import pandas as pd
 from io import StringIO
 
 app = Flask(__name__)
+
 @app.route('/')
 def index():
     return render_template('index.html')

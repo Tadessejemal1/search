@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Company Search Tool</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             padding: 20px;
         }
+        
         .container {
-            max-width: 1000px;
+            width: 100%;
             margin: 0 auto;
             background: white;
             padding: 20px;
@@ -22,6 +25,8 @@
             width: 100%;
             padding: 10px;
             margin: 10px 0;
+            box-sizing: border-box;
+            padding-left: 20px;
         }
         table {
             width: 100%;
@@ -31,7 +36,12 @@
         th, td {
             text-align: left;
             padding: 8px;
+            padding-left: 20px;
             border: 1px solid #ddd;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8f8f8;
         }
     </style>
 </head>
@@ -43,7 +53,7 @@
             <button type="submit">Search</button>
         </form>
 
-        <table id="resultsTable">
+        <table id="resultsTable" class="display">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -52,7 +62,6 @@
                     <th>Address Nominative</th>
                     <th>Apartment</th>
                     <th>Branch Title</th>
-                    <th>Card Logo URL</th>
                     <th>Cluster Key</th>
                     <th>Company Type</th>
                     <th>Country</th>
@@ -65,7 +74,6 @@
                     <th>House Number</th>
                     <th>Indexed At</th>
                     <th>Is Open</th>
-                    <th>Last Name</th>
                     <th>Municipality</th>
                     <th>Phone</th>
                     <th>Postal Code</th>
@@ -81,117 +89,96 @@
 
         <button id="exportBtn" style="display:none;">Export to CSV</button>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
     <script>
-        document.getElementById('searchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const query = document.getElementById('query').value;
-            fetch('/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `query=${query}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.querySelector('#resultsTable tbody');
-                tbody.innerHTML = ''; 
-                data.forEach(business => {
-                    const row = document.createElement('tr');
-
-                    const additionalPhones = business.additional_phones.length ? business.additional_phones.map(phone => phone.pretty).join(", ") : 'N/A';
-
-                    row.innerHTML = `
-                        <td>${business.name || 'N/A'}</td>
-                        <td>${additionalPhones}</td>
-                        <td>${business.address || 'N/A'}</td>
-                        <td>${business.address_nominative || 'N/A'}</td>
-                        <td>${business.apartment || 'N/A'}</td>
-                        <td>${business.branch_title?.is?.singular || 'N/A'}</td>
-                        <td>${business.card_logo_url || 'N/A'}</td>
-                        <td>${business.cluster_key || 'N/A'}</td>
-                        <td>${business.company_type || 'N/A'}</td>
-                        <td>${business.country || 'N/A'}</td>
-                        <td>${business.dob || 'N/A'}</td>
-                        <td>${business.email || 'N/A'}</td>
-                        <td>${business.fax || 'N/A'}</td>
-                        <td>${business.first_name || 'N/A'}</td>
-                        <td>${business.floor || 'N/A'}</td>
-                        <td>${business.geo?.coordinates || 'N/A'}</td>
-                        <td>${business.house_number || 'N/A'}</td>
-                        <td>${business.indexed_at || 'N/A'}</td>
-                        <td>${business.is_open || 'N/A'}</td>
-                        <td>${business.last_name || 'N/A'}</td>
-                        <td>${business.municipality || 'N/A'}</td>
-                        <td>${business.phone?.pretty || 'N/A'}</td>
-                        <td>${business.postal_code || 'N/A'}</td>
-                        <td>${business.postal_station || 'N/A'}</td>
-                        <td>${business.slogan || 'N/A'}</td>
-                        <td>${business.street || 'N/A'}</td>
-                        <td>${business.url || 'N/A'}</td>
-                        <td>${business.vat_number || 'N/A'}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-
-                if (data.length > 0) {
-                    document.getElementById('exportBtn').style.display = 'block';
-                } else {
-                    document.getElementById('exportBtn').style.display = 'none';
-                }
+        $(document).ready(function () {
+            const dataTable = $('#resultsTable').DataTable({
+                responsive: true,
+                paging: true,
+                searching: true,
+                autoWidth: false
             });
-        });
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                const query = $('#query').val();
 
-        document.getElementById('exportBtn').addEventListener('click', function() {
-            fetch('/export', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ results: Array.from(document.querySelectorAll('#resultsTable tbody tr')).map(row => {
-                    return {
-                        name: row.cells[0].innerText,
-                        additional_phones: row.cells[1].innerText,
-                        address: row.cells[2].innerText,
-                        address_nominative: row.cells[3].innerText,
-                        apartment: row.cells[4].innerText,
-                        branch_title: row.cells[5].innerText,
-                        card_logo_url: row.cells[6].innerText,
-                        cluster_key: row.cells[7].innerText,
-                        company_type: row.cells[8].innerText,
-                        country: row.cells[9].innerText,
-                        dob: row.cells[10].innerText,
-                        email: row.cells[11].innerText,
-                        fax: row.cells[12].innerText,
-                        first_name: row.cells[13].innerText,
-                        floor: row.cells[14].innerText,
-                        geo_coordinates: row.cells[15].innerText,
-                        house_number: row.cells[16].innerText,
-                        indexed_at: row.cells[17].innerText,
-                        is_open: row.cells[18].innerText,
-                        last_name: row.cells[19].innerText,
-                        municipality: row.cells[21].innerText,
-                        phone: row.cells[22].innerText,
-                        postal_code: row.cells[23].innerText,
-                        postal_station: row.cells[24].innerText,
-                        slogan: row.cells[25].innerText,
-                        street: row.cells[26].innerText,
-                        url: row.cells[27].innerText,
-                        vat_number: row.cells[28].innerText
-                    };
-                }) })
-            })
-            .then(response => response.text())
-            .then(data => {
-                const blob = new Blob([data], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'results.csv';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${query}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    dataTable.clear();
+                    data.forEach(business => {
+                        const additionalPhones = business.additional_phones.length 
+                            ? business.additional_phones.map(phone => phone.pretty).join(", ") 
+                            : 'N/A';
+
+                        dataTable.row.add([
+                            business.name || 'N/A',
+                            additionalPhones,
+                            business.address || 'N/A',
+                            business.address_nominative || 'N/A',
+                            business.apartment || 'N/A',
+                            business.branch_title?.is?.singular || 'N/A',
+                            business.cluster_key || 'N/A',
+                            business.company_type || 'N/A',
+                            business.country || 'N/A',
+                            business.dob || 'N/A',
+                            business.email || 'N/A',
+                            business.fax || 'N/A',
+                            business.first_name || 'N/A',
+                            business.floor || 'N/A',
+                            business.geo?.coordinates || 'N/A',
+                            business.house_number || 'N/A',
+                            business.indexed_at || 'N/A',
+                            business.is_open || 'N/A',
+                            business.last_name || 'N/A',
+                            business.municipality || 'N/A',
+                            business.phone?.pretty || 'N/A',
+                            business.postal_code || 'N/A',
+                            business.postal_station || 'N/A',
+                            business.slogan || 'N/A',
+                            business.street || 'N/A',
+                            business.url || 'N/A',
+                            business.vat_number || 'N/A'
+                        ]).draw();
+                    });
+
+                    if (data.length > 0) {
+                        $('#exportBtn').show();
+                    } else {
+                        $('#exportBtn').hide();
+                    }
+                });
+            });
+
+            $('#exportBtn').on('click', function() {
+                fetch('/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        results: dataTable.rows().data().toArray()
+                    })
+                })
+                .then(response => response.text())
+                .then(data => {
+                    const blob = new Blob([data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'results.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
             });
         });
     </script>

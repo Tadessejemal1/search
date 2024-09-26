@@ -10,14 +10,25 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
         }
-        
+        /* Full-width background */
+        .background-wrapper {
+            background-color: white;
+            width: 100%;
+        }
         .container {
+            max-width: 100%;
             width: 100%;
             margin: 0 auto;
-            background: white;
             padding: 20px;
+        }
+        .inner-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
@@ -28,9 +39,14 @@
             box-sizing: border-box;
             padding-left: 20px;
         }
-        table {
+        /* Wrap the table in a scrollable div */
+        .table-responsive {
+            overflow-x: auto;
             width: 100%;
             margin-top: 20px;
+        }
+        table {
+            width: 100%;
             border-collapse: collapse;
         }
         th, td {
@@ -46,48 +62,55 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Company Search Tool</h1>
-        <form id="searchForm">
-            <input type="text" id="query" placeholder="Enter search query">
-            <button type="submit">Search</button>
-        </form>
+    <div class="background-wrapper">
+        <div class="container">
+            <div class="inner-container">
+                <h1>Company Search Tool</h1>
+                <form id="searchForm">
+                    <input type="text" id="query" placeholder="Enter search query">
+                    <button type="submit">Search</button>
+                </form>
 
-        <table id="resultsTable" class="display">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Additional Phones</th>
-                    <th>Address</th>
-                    <th>Address Nominative</th>
-                    <th>Apartment</th>
-                    <th>Branch Title</th>
-                    <th>Cluster Key</th>
-                    <th>Company Type</th>
-                    <th>Country</th>
-                    <th>DOB</th>
-                    <th>Email</th>
-                    <th>Fax</th>
-                    <th>First Name</th>
-                    <th>Floor</th>
-                    <th>Geo Coordinates</th>
-                    <th>House Number</th>
-                    <th>Indexed At</th>
-                    <th>Is Open</th>
-                    <th>Municipality</th>
-                    <th>Phone</th>
-                    <th>Postal Code</th>
-                    <th>Postal Station</th>
-                    <th>Slogan</th>
-                    <th>Street</th>
-                    <th>URL</th>
-                    <th>VAT Number</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+                <div class="table-responsive">
+                    <table id="resultsTable" class="display">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Additional Phones</th>
+                                <th>Address</th>
+                                <th>Address Nominative</th>
+                                <th>Apartment</th>
+                                <th>Branch Title</th>
+                                <th>Cluster Key</th>
+                                <th>Company Type</th>
+                                <th>Country</th>
+                                <th>DOB</th>
+                                <th>Email</th>
+                                <th>Fax</th>
+                                <th>First Name</th>
+                                <th>Floor</th>
+                                <th>Geo Coordinates</th>
+                                <th>House Number</th>
+                                <th>Indexed At</th>
+                                <th>Is Open</th>
+                                <th>Last Name</th>
+                                <th>Municipality</th>
+                                <th>Phone</th>
+                                <th>Postal Code</th>
+                                <th>Postal Station</th>
+                                <th>Slogan</th>
+                                <th>Street</th>
+                                <th>URL</th>
+                                <th>VAT Number</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
 
-        <button id="exportBtn" style="display:none;">Export to CSV</button>
+                <button id="exportBtn" style="display:none;">Export to CSV</button>
+            </div>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -98,8 +121,12 @@
                 responsive: true,
                 paging: true,
                 searching: true,
-                autoWidth: false
+                autoWidth: false,
+                language: {
+                    emptyTable: "No data available in table"
+                }
             });
+
             $('#searchForm').on('submit', function(e) {
                 e.preventDefault();
                 const query = $('#query').val();
@@ -157,7 +184,6 @@
                     }
                 });
             });
-
             $('#exportBtn').on('click', function() {
                 fetch('/export', {
                     method: 'POST',
